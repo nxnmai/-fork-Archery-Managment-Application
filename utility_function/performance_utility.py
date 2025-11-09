@@ -94,7 +94,7 @@ def _fetch_participating_base(club_competition_id=None, round_id=None, archer_ac
         if round_id:
             query = query.eq("event_context.round_id", round_id)
         if archer_account_id:
-            query = query.eq("archer.account_id", archer_account_id)
+            query = query.eq("archer_id", archer_account_id)
 
         res = query.execute()
         return res.data or []
@@ -179,7 +179,7 @@ def fetch_yearly_normalized_average(yc_id=None, round_id=None, archer_account_id
             "archer!inner(account!inner(fullname))"
         ).eq("type","competition").eq("event_context.round_id", round_id).in_("event_context.club_competition_id", comp_ids)
         if archer_account_id:
-            query = query.eq("archer.account_id", archer_account_id)
+            query = query.eq("archer_id", archer_account_id)
         res = query.execute()
         rows = res.data or []
     except Exception as e:
