@@ -94,7 +94,7 @@ def _fetch_participating_base(club_competition_id=None, round_id=None, archer_ac
         if round_id:
             query = query.eq("event_context.round_id", round_id)
         if archer_account_id:
-            query = query.eq("archer_id", archer_account_id)
+            query = query.eq("participating_id", archer_account_id)
 
         res = query.execute()
         return res.data or []
@@ -162,10 +162,14 @@ def fetch_yearly_normalized_average(yc_id=None, round_id=None, archer_account_id
         st.info("Please select both a Yearly Club Championship and a Round.")
         return pd.DataFrame()
     try:
-        comp_res = supabase.table("club_competition").select("club_competition_id, yearly_club_championship_id").eq("yearly_club_championship_id", yc_id).execute()
-        comp_ids = [r["club_competition_id"] for r in (comp_res.data or []) if r.get("club_competition_id")]
+        query = supabase.table("event_context").select("club_competition_id").eq("yearly_club_championship_id", yc_id)
+        if round_id:
+            query = query.eq("round_id", round_id)
+        comp_res = query.execute()
+        comp_ids = sorted({r.get("club_competition_id") for r in (comp_res.data or []) if r.get("club_competition_id")})
+        
         if not comp_ids:
-            st.info("No competitions found for this yearly championship (check link table). # placeholder")
+            st.info("No competitions found for this yearly championship (check event context links).")            
             return pd.DataFrame()
     except Exception as e:
         st.warning(f"Could not load competitions for yearly championship: {e}")
@@ -179,7 +183,7 @@ def fetch_yearly_normalized_average(yc_id=None, round_id=None, archer_account_id
             "archer!inner(account!inner(fullname))"
         ).eq("type","competition").eq("event_context.round_id", round_id).in_("event_context.club_competition_id", comp_ids)
         if archer_account_id:
-            query = query.eq("archer_id", archer_account_id)
+            query = query.eq("participating_id", archer_account_id)
         res = query.execute()
         rows = res.data or []
     except Exception as e:
